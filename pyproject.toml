@@ -6,4 +6,8 @@ requires-python = ">=3.14"
 dependencies = [
     "flagembedding>=1.4.0",
     "openai>=2.38.0",
+    "qdrant-client>=1.18.0",
+    "toolset"
 ]
+[tool.uv.sources]
+toolset = { git = "https://github.com/loopsrage/pytools" }
