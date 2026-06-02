@@ -6,7 +6,8 @@ from typing import Any
 
 from FlagEmbedding import BGEM3FlagModel
 from qdrant_client import QdrantClient, models
-
+from settings.helper import setting
+from thread_safe.onceler import Onceler
 
 
 def new_collection(client: QdrantClient, name: str):
