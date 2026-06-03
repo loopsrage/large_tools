@@ -59,7 +59,7 @@ def query_llama_model(prompt, model, verbose: bool = False, from_pretrained_kwar
                 print(chunk_text, end="", flush=True)
 
         generation_thread.join()
-        return "<think>\n" + full_response
+        return full_response
 
 async def async_query_llama_model(*args, **kwargs):
     return await asyncio.to_thread(query_llama_model, *args, **kwargs)
