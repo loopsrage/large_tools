@@ -122,7 +122,7 @@ def only_new_docs(client: QdrantClient, documents: list[Document]):
 
     new_docs = []
     for category, category_docs in collections_ids.items():
-        check = [d.tweak_id for d in category_docs]
+        check = [d.id for d in category_docs]
         try:
             existing_points = client.retrieve(
                 collection_name=category,
