@@ -147,7 +147,7 @@ def embed_upload_documents(client: QdrantBGEM3, documents: list[Document]):
     embeddings = client.embed([d.payload for d in new_docs])
     collections = defaultdict(list)
 
-    for idx, doc in enumerate(documents):
+    for idx, doc in enumerate(new_docs):
         dense_vector = embeddings['dense_vecs'][idx].tolist()
         sparse_data = embeddings['lexical_weights'][idx]
         sparse_vector = models.SparseVector(
