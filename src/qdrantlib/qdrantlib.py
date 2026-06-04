@@ -6,6 +6,7 @@ from typing import Any
 
 from FlagEmbedding import BGEM3FlagModel
 from qdrant_client import QdrantClient, models
+from rapidfuzzlib.rapidfuzzlib import fuzz_one_against_choices
 from settings.helper import setting
 from thread_safe.onceler import Onceler
 
@@ -108,6 +109,19 @@ class QdrantBGEM3:
             query=models.FusionQuery(fusion=models.Fusion.DBSF),
             limit=limit
         )
+
+    def fuzzy_query(self, collection, query, prefetch_limit=10, limit=10, fuzzy_threshold=10., dense_threshold=0.9, sparse_threshold=0.9):
+        resp = self.query(
+            collection, query,
+            prefetch_limit=prefetch_limit,
+            limit=limit,
+            dense_threshold=dense_threshold,
+            sparse_threshold=sparse_threshold)
+        points_list = resp.points if hasattr(resp, "points") else resp
+        choices = {*(p.payload.get("text") or "" for p in points_list)}
+        results = fuzz_one_against_choices(query, list(choices), threshold=fuzzy_threshold)
+        return sorted(results.items(), key=lambda x: x[1], reverse=True)
+
 @dataclass
 class Document:
     id: Any = None
