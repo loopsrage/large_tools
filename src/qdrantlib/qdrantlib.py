@@ -135,7 +135,7 @@ def only_new_docs(client: QdrantClient, documents: list[Document]):
             existing_ids = set()
 
         for doc in category_docs:
-            if doc.tweak_id not in existing_ids:
+            if doc.id not in existing_ids:
                 new_docs.append(doc)
     return new_docs
 
