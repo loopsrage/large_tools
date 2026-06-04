@@ -114,6 +114,7 @@ class Document:
     payload: str = None
     payload_hash: str = None
     collection: str = None
+    metadata: dict = None
 
 def only_new_docs(client: QdrantClient, documents: list[Document]):
     collections_ids = defaultdict(list)
@@ -160,7 +161,7 @@ def embed_upload_documents(client: QdrantBGEM3, documents: list[Document]):
                 "bge-m3-dense": dense_vector,
                 "bge-m3-sparse": sparse_vector
             },
-            payload={"text": doc.payload}
+            payload={"text": doc.payload, **(doc.metadata or {})}
         ))
 
     for k, v in collections.items():
