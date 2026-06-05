@@ -123,6 +123,7 @@ class QdrantBGEM3:
                     sparse_threshold=0.9,
                     lookahead=50,
                     lookbehind=50,
+                    skip_words: set[str] =None,
                     ):
         resp = self.query(
             collection, query,
@@ -146,7 +147,7 @@ class QdrantBGEM3:
             "that",
             "are",
             "your",
-        }
+        }.union(skip_words)
 
         filtered_words = []
         for w in tokens:
