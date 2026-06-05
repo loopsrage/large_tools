@@ -95,10 +95,9 @@ def pdf_pipeline(client, chunk_size, batch_size, worker_count):
 class PDFIndexQueue(SimpleApp):
     pfi: PDFIndex = None
 
-    def __init__(self, client, chunk_size, batch_size, worker_count, actions: dict[str, ActionConfig]):
-        super().__init__(actions)
+    def __init__(self, client, chunk_size, batch_size, worker_count):
+        super().__init__(pdf_pipeline(client, chunk_size, batch_size, worker_count))
         self.pfi = PDFIndex()
-        self.queues = pdf_pipeline(client, chunk_size, batch_size, worker_count)
 
     def extract(self, fs: FSBase, path: str):
         for files in fs.walk(path):
