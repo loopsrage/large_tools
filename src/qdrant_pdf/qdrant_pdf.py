@@ -10,7 +10,7 @@ from queue_controller.queueData import QueueData
 from thread_safe.index import Index
 from thread_safe.tslist import TsList
 
-from src.qdrantlib.qdrantlib import embed_upload_documents
+from src.qdrantlib.qdrantlib import embed_upload_documents, Document
 
 
 class PDFIndex:
@@ -92,17 +92,15 @@ def pdf_pipeline(client, chunk_size, batch_size, worker_count):
 
     return new_index_queue(worker_count, text_node, buffer_node, embed_upload_node, png_node)
 
-class PDFIndexQueue:
+class PDFIndexQueue(SimpleApp):
     pfi: PDFIndex = None
-    queues: dict[str, ActionConfig] = None
 
-    def __init__(self, client, chunk_size, batch_size, worker_count):
-        self.simple_app = None
+    def __init__(self, client, chunk_size, batch_size, worker_count, actions: dict[str, ActionConfig]):
+        super().__init__(actions)
         self.pfi = PDFIndex()
         self.queues = pdf_pipeline(client, chunk_size, batch_size, worker_count)
-        self.simple_app = SimpleApp(self.queues)
 
-    def init(self, fs: FSBase, path: str):
+    def extract(self, fs: FSBase, path: str):
         for files in fs.walk(path):
             for f in files:
                 self.pfi.store_from_file(f"{path}/{f}")
@@ -115,8 +113,8 @@ class PDFIndexQueue:
         for filename, value in pdf.range_data():
             fn = f"{name}_{filename}"
             if ".txt" in filename:
-                self.simple_app.action_queues.enqueue("text_action", fn, value)
+                self.action_queues.enqueue("text_action", fn, value)
 
             if ".png" in filename:
-                self.simple_app.action_queues.enqueue("png_node", fn, value)
+                self.action_queues.enqueue("png_node", fn, value)
 
