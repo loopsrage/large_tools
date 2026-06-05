@@ -4,9 +4,11 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any
 
+import rapidfuzz.process
 from FlagEmbedding import BGEM3FlagModel
+from flashtext import KeywordProcessor
+from nltk import word_tokenize
 from qdrant_client import QdrantClient, models
-from rapidfuzzlib.rapidfuzzlib import fuzz_one_against_choices
 from settings.helper import setting
 from thread_safe.onceler import Onceler
 
@@ -79,6 +81,9 @@ class QdrantBGEM3:
         self.create_collection_once(collection)
         self.client.upload_points(
             collection_name=collection,
+            batch_size=1024,
+            parallel=8,
+            wait=False,
             points=points,
         )
 
@@ -110,7 +115,15 @@ class QdrantBGEM3:
             limit=limit
         )
 
-    def fuzzy_query(self, collection, query, prefetch_limit=10, limit=10, fuzzy_threshold=10., dense_threshold=0.9, sparse_threshold=0.9):
+    def fuzzy_query(self, collection, query,
+                    prefetch_limit=10,
+                    limit=10,
+                    fuzzy_threshold=10.,
+                    dense_threshold=0.9,
+                    sparse_threshold=0.9,
+                    lookahead=50,
+                    lookbehind=50,
+                    ):
         resp = self.query(
             collection, query,
             prefetch_limit=prefetch_limit,
@@ -119,8 +132,60 @@ class QdrantBGEM3:
             sparse_threshold=sparse_threshold)
         points_list = resp.points if hasattr(resp, "points") else resp
         choices = {*(p.payload.get("text") or "" for p in points_list)}
-        results = fuzz_one_against_choices(query, list(choices), threshold=fuzzy_threshold)
-        return sorted(results.items(), key=lambda x: x[1], reverse=True)
+
+        filtered_words = [
+            w.strip(":,;()\"'")  # Clean up loose trailing punctuation
+            for w in word_tokenize(query)
+            if len(w) > 2  # Skip single characters/punctuation tokens
+               and w.upper() != "UNKNOWN"
+        ]
+        joined_text = " ".join(choices)
+        unique_words = list(dict.fromkeys(filtered_words))
+        keyword_processor = KeywordProcessor(case_sensitive=False)
+        keyword_processor.add_keywords_from_list(unique_words)
+        keywords_found = keyword_processor.extract_keywords(
+            joined_text, span_info=True
+        )
+
+        sorted_spans = sorted([(start, end) for _, start, end in keywords_found])
+        merged_spans = []
+        for current in sorted_spans:
+            if not merged_spans:
+                merged_spans.append(current)
+            else:
+                prev_start, prev_end = merged_spans[-1]
+                current_start, current_end = current
+                if current_start <= prev_end + 1:
+                    merged_spans[-1] = (prev_start, max(prev_end, current_end))
+                else:
+                    merged_spans.append(current)
+
+        regex_context_matches = []
+        for start, end in merged_spans:
+            buffer_start = max(0, start - lookbehind)
+            buffer_end = min(len(joined_text), end + lookahead)
+
+            exact_match_segment = joined_text[start:end]
+            full_context_window = joined_text[buffer_start:buffer_end]
+
+            regex_context_matches.append(
+                {
+                    "matched_text": exact_match_segment,
+                    "context": full_context_window,
+                    "span": (start, end),
+                }
+            )
+
+        best = rapidfuzz.process.extractOne(query, choices, score_cutoff=fuzzy_threshold)
+        extracted = rapidfuzz.process.extract(query, choices, score_cutoff=fuzzy_threshold)
+
+        return {
+            "extracted": extracted,
+            "best": best,
+            "points": points_list,
+            "regex": regex_context_matches
+        }
+
 
 @dataclass
 class Document:
