@@ -4,13 +4,13 @@ from concurrent.futures.thread import ThreadPoolExecutor
 
 from application_controller.app_controller import SimpleApp
 from fsspecc.base_fsspecfs.base_fsspecfs import FSBase
-from index_queue.index_queue import ActionConfig, new_index_queue
+from index_queue.index_queue import  new_index_queue
 from pfds.pdfm import PDFM, extract_text, extract_images
 from queue_controller.queueData import QueueData
 from thread_safe.index import Index
 from thread_safe.tslist import TsList
 
-from src.qdrantlib.qdrantlib import embed_upload_documents, Document
+from qdrantlib.qdrantlib import Document, embed_upload_documents
 
 
 class PDFIndex:

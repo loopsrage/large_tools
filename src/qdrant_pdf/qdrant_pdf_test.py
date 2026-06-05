@@ -7,10 +7,10 @@ from application_controller.app_controller import SimpleApp, run_app
 from dotenv import load_dotenv
 from fsspecc.base_fsspecfs.base_fsspecfs import FSBase
 from qdrant_client import QdrantClient
-from qdrantlib.qdrantlib import QdrantBGEM3
 from settings.helper import setting, restore
 
-from hts.hslib.qdrant_pdf.qdrant_pdf import PDFIndexQueue
+from qdrant_pdf.qdrant_pdf import PDFIndexQueue
+from qdrantlib.qdrantlib import QdrantBGEM3
 
 load_dotenv()
 restore(os.getenv("ENV_FILE"))
