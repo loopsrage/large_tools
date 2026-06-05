@@ -112,7 +112,7 @@ class PDFIndexQueue(SimpleApp):
         for filename, value in pdf.range_data():
             fn = f"{name}_{filename}"
             if ".txt" in filename:
-                self.action_queues.enqueue("text_action", fn, value)
+                self.action_queues.enqueue("text_node", fn, value)
 
             if ".png" in filename:
                 self.action_queues.enqueue("png_node", fn, value)
