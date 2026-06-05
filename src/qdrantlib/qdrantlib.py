@@ -1,4 +1,5 @@
 import os
+import re
 import threading
 from collections import defaultdict
 from dataclasses import dataclass
@@ -7,7 +8,6 @@ from typing import Any
 import rapidfuzz.process
 from FlagEmbedding import BGEM3FlagModel
 from flashtext import KeywordProcessor
-from nltk import word_tokenize
 from qdrant_client import QdrantClient, models
 from settings.helper import setting
 from thread_safe.onceler import Onceler
@@ -132,13 +132,34 @@ class QdrantBGEM3:
             sparse_threshold=sparse_threshold)
         points_list = resp.points if hasattr(resp, "points") else resp
         choices = {*(p.payload.get("text") or "" for p in points_list)}
+        tokens = re.findall(r"[\w\d\-./#]+", query)
+        stop_words = {
+            "for",
+            "and",
+            "the",
+            "each",
+            "refer",
+            "to",
+            "with",
+            "from",
+            "this",
+            "that",
+            "are",
+            "your",
+        }
 
-        filtered_words = [
-            w.strip(":,;()\"'")  # Clean up loose trailing punctuation
-            for w in word_tokenize(query)
-            if len(w) > 2  # Skip single characters/punctuation tokens
-               and w.upper() != "UNKNOWN"
-        ]
+        filtered_words = []
+        for w in tokens:
+            w_clean = w.strip(":,;()\"'.")
+            if (
+                    not w_clean
+                    or w_clean.lower() in stop_words
+                    or len(w_clean) < 3
+                    or w_clean.upper() == "UNKNOWN"
+            ):
+                continue
+            filtered_words.append(w_clean)
+
         joined_text = " ".join(choices)
         unique_words = list(dict.fromkeys(filtered_words))
         keyword_processor = KeywordProcessor(case_sensitive=False)
