@@ -136,6 +136,9 @@ class QdrantBGEM3:
         choices = {p.payload.get("text", "") for p in points_list}
 
         tokens = re.findall(r"[\w\d\-./#]+", query)
+        if skip_words is None:
+            skip_words = {}
+
         stop_words = {
             "for",
             "and",
