@@ -132,7 +132,9 @@ class QdrantBGEM3:
             dense_threshold=dense_threshold,
             sparse_threshold=sparse_threshold)
         points_list = resp.points if hasattr(resp, "points") else resp
-        choices = {p.id: p.payload.get("text", "") for p in points_list}
+        choices_map = {p.id: p.payload.get("text", "") for p in points_list}
+        choices = {p.payload.get("text", "") for p in points_list}
+
         tokens = re.findall(r"[\w\d\-./#]+", query)
         stop_words = {
             "for",
@@ -205,7 +207,8 @@ class QdrantBGEM3:
             "extracted": extracted,
             "best": best,
             "points": points_list,
-            "regex": regex_context_matches
+            "regex": regex_context_matches,
+            "choices": choices_map
         }
 
 
