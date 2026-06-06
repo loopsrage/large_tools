@@ -207,7 +207,24 @@ class QdrantBGEM3:
             )
 
         best = rapidfuzz.process.extractOne(query, choices, score_cutoff=fuzzy_threshold)
-        extracted = rapidfuzz.process.extract(query, choices, score_cutoff=fuzzy_threshold)
+        extracted_raw = rapidfuzz.process.extract(query, choices, score_cutoff=fuzzy_threshold)
+
+        text_to_ids = {}
+        for p in points_list:
+            text_val = p.payload.get("text", "")
+            if text_val not in text_to_ids:
+                text_to_ids[text_val] = []
+            text_to_ids[text_val].append(p.id)
+
+        extracted = [
+            {
+                "ids": text_to_ids.get(choice_text, []),
+                "text": choice_text,
+                "score": score,
+                "index": idx
+            }
+            for choice_text, score, idx in extracted_raw
+        ]
 
         return {
             "extracted": extracted,
